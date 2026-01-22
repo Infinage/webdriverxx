@@ -1,14 +1,14 @@
 #pragma once
 
-#include "json.hpp"
+#include "nlohmann/json.hpp"
 
 #include <optional>
 #include <string>
 #include <stdexcept>
 
-using json = nlohmann::json;
-
 namespace webdriverxx {
+    using Json = nlohmann::json;
+
     struct Cookie {
         std::string name, value;
         std::optional<std::string> domain, path, sameSite;
@@ -18,7 +18,7 @@ namespace webdriverxx {
         Cookie(const std::string &name, const std::string &value): 
             name(name), value(value) {}
 
-        Cookie(const json &json_) {
+        Cookie(const Json &json_) {
             if (json_.is_array() || !json_.contains("name") || !json_.contains("value"))
                 throw std::runtime_error("Not a valid cookie: " + json_.dump());
 
@@ -37,8 +37,8 @@ namespace webdriverxx {
             }
         }
 
-        operator json() const {
-            json object = json{{"name", name}, {"value", value}};
+        operator Json() const {
+            Json object{{"name", name}, {"value", value}};
 
             // Optional values
             if (domain)       object["domain"] = *domain;

@@ -1,239 +1,261 @@
 # WebDriver++
 
-WebDriver++ is a lightweight C++ client for Selenium WebDriver, designed to automate web browsers programmatically. It provides a simple and intuitive API to interact with browsers via WebDriver.
+**WebDriver++** is a modern, lightweight C++ client for the Selenium WebDriver protocol.
+It provides a clean, RAII-driven API for browser automation with minimal dependencies and a strong focus on correctness and ergonomics.
 
 ---
 
 ## Features
-- **Lightweight and minimal dependencies**: Uses `libcpr/cpr` and `nlohmann/json`.
-- **Header-only library**: Easy to integrate into your projects.
-- **RAII-based session management**: Ensures proper resource cleanup.
-- **Improved error handling**: Detailed request/response logs for debugging.
-- **Cross-browser support**: Works with Chrome, Firefox, and Edge.
+
+* **Modern C++ (C++23)** API design
+* **Lightweight**: built on `cpp-httplib` and `nlohmann/json`
+* **RAII-based session management**
+* **Fluent, expressive API**
+* **Cross-browser support**: Chrome, Firefox, Edge
+* **Protocol-faithful** implementation of W3C WebDriver
 
 ---
 
-## Getting Started
+## Installation
 
-### Installation
-To use WebDriver++, clone the repository and build it using CMake:
+Using CPM:
 
-```sh
-git clone <repo-url>
-cd webdriverxx
-mkdir build && cd build
-cmake ..
+```cmake
+include(cmake/CPM.cmake)
+CPMAddPackage("gh:infinage/webdriverxx@0.0.1")
 ```
 
+Or simply include the headers directly.
+
 ---
 
-### Usage
+## Quick Example
+
 ```cpp
-// example.cpp
-#include "webdriverxx.hpp"
+#include "webdriver.hpp"
+
+using namespace webdriverxx;
+using namespace webdriverxx::enums;
 
 int main() {
-    // Initialize the WebDriver with browser capabilities and port
-    webdriverxx::Driver driver{webdriverxx::Capabilities{BROWSER_TYPE, BROWSER_BINARY}, PORT};
+    Driver driver{
+        Capabilities{Browsers::Chrome, "/usr/bin/google-chrome"}
+            .headless(true)
+            .startMaximized(true),
+        "9515"
+    };
 
-    // Navigate to a webpage
     driver.navigateTo("https://duckduckgo.com");
 
-    // Find an element and interact with it
-    webdriverxx::Element element{driver.findElement(webdriverxx::LOCATION_STRATEGY::CSS, "#searchbox_input")};
-    element.sendKeys("Hello world").submit();
-
-    return 0;
+    auto search = driver.findElement(LocationStrategy::CSS, "#searchbox_input");
+    search.sendKeys("WebDriver++ C++").submit();
 }
 ```
 
-#### Compile and Run:
-```sh
-g++ example.cpp -o example -std=c++21 -Iinclude
-./example
+---
+
+## Design Overview
+
+### RAII Session Management
+
+* A WebDriver **session is created in the `Driver` constructor**
+* The session is **automatically closed in the destructor**
+* You may also explicitly call `quit()`
+
+```cpp
+Driver driver{caps, "9515"};  // POST /session
+// ...
+driver.quit();               // DELETE /session
 ```
 
-For more examples, check the `examples` directory in the repository.
+This guarantees correct cleanup even in the presence of exceptions.
 
 ---
 
-## TODO
-- [ ] Implement Actions API
-- [ ] Add support for Execute Async
-- [ ] Expand test coverage with additional test cases
+## Runtime Assumptions
+
+WebDriver++ is a **pure WebDriver client**, not a browser or driver manager.
+
+### Assumptions
+
+* A compatible WebDriver **(chromedriver, geckodriver, msedgedriver)** is already running
+* A runnable browser binary is present on the system
+* The user is responsible for:
+  * Installing the browser
+  * Installing the corresponding driver
+  * Ensuring version compatibility
+
+The library connects to an **existing WebDriver endpoint** via HTTP and does not attempt to manage external processes.
 
 ---
 
-## Running Tests
-WebDriver++ includes a comprehensive set of test cases. Follow the steps below to run the tests:
+### Browser Capabilities
 
-1. Modify `CMakeLists.txt` under the `_tests_` directory to specify the correct `BINARY_PATH` for your browser executables.
-2. Run the tests using the following commands:
+Capabilities are built fluently and converted internally to WebDriver JSON.
 
-#### Run All Tests (Firefox, Chrome, Edge):
-```sh
-FIREFOX_PORT=1001 CHROME_PORT=1002 MSEDGE_PORT=1003 ctest --output-on-failure
+```cpp
+Capabilities caps{Browsers::Firefox, "/usr/bin/firefox"};
+
+caps.headless(true)
+    .windowSize(900, 1400)
+    .disableExtensions(true);
 ```
 
-#### Run Tests for a Single Browser:
-```sh
-CHROME_PORT=1002 ctest -L chrome --output-on-failure
-```
-
-#### Run Tests Matching a Specific Pattern:
-```sh
-CHROME_PORT=1002 ctest -R '*find*CHROME' --output-on-failure
-```
+Browser-specific behavior is handled internally.
 
 ---
 
-## Supported Endpoints
-WebDriver++ supports a wide range of WebDriver API endpoints.
+## User-Facing API
+
+### Driver
+
+| Function                             | Description               |
+| ------------------------------------ | ------------------------- |
+| `Driver(...)`                        | Create a session          |
+| `status()`                           | Check WebDriver readiness |
+| `quit()`                             | End session               |
+| `navigateTo(url)`                    | Navigate to URL           |
+| `back()` / `forward()` / `refresh()` | Navigation                |
+| `getCurrentURL()`                    | Current URL               |
+| `getTitle()`                         | Page title                |
+| `getPageSource()`                    | HTML source               |
 
 ---
 
-### Session Management
-| Method  | URI Template                      | Command          | Status  |
-|---------|-----------------------------------|------------------|---------|
-| POST    | /session                          | New Session      | ✅      |
-| DELETE  | /session/{session id}             | Delete Session   | ✅      |
+### Window & Frame Management
 
----
-
-### Status
-| Method  | URI Template                      | Command          | Status  |
-|---------|-----------------------------------|------------------|---------|
-| GET     | /status                           | Status           | ✅      |
-
----
-
-### Timeouts
-| Method  | URI Template                      | Command          | Status  |
-|---------|-----------------------------------|------------------|---------|
-| GET     | /session/{session id}/timeouts    | Get Timeouts     | ✅      |
-| POST    | /session/{session id}/timeouts    | Set Timeouts     | ✅      |
-
----
-
-### Navigation
-| Method  | URI Template                      | Command          | Status  |
-|---------|-----------------------------------|------------------|---------|
-| POST    | /session/{session id}/url         | Go               | ✅      |
-| GET     | /session/{session id}/url         | Get Current URL  | ✅      |
-| POST    | /session/{session id}/back        | Back             | ✅      |
-| POST    | /session/{session id}/forward     | Forward          | ✅      |
-| POST    | /session/{session id}/refresh     | Refresh          | ✅      |
-
----
-
-### Window Management
-| Method  | URI Template                            | Command                 | Status  |
-|---------|-----------------------------------------|-------------------------|---------|
-| GET     | /session/{session id}/window            | Get Window Handle       | ✅      |
-| DELETE  | /session/{session id}/window            | Close Window            | ✅      |
-| POST    | /session/{session id}/window            | Switch To Window        | ✅      |
-| GET     | /session/{session id}/window/handles    | Get Window Handles      | ✅      |
-| GET     | /session/{session id}/window/new        | Create new Window / Tab | ✅      |
-| GET     | /session/{session id}/window/rect       | Get Window Rect         | ✅      |
-| POST    | /session/{session id}/window/rect       | Set Window Rect         | ✅      |
-| POST    | /session/{session id}/window/maximize   | Maximize Window         | ✅      |
-| POST    | /session/{session id}/window/minimize   | Minimize Window         | ✅      |
-| POST    | /session/{session id}/window/fullscreen | Fullscreen Window       | ✅      |
-
----
-
-### Frame Management
-| Method  | URI Template                      | Command                | Status  |
-|---------|-----------------------------------|------------------------|---------|
-| POST    | /session/{session id}/frame       | Switch To Frame        | ✅      |
-| POST    | /session/{session id}/frame/parent| Switch To Parent Frame | ✅      |
+| Function                                     | Description             |
+| -------------------------------------------- | ----------------------- |
+| `getWindowHandle()`                          | Current window          |
+| `getWindowHandles()`                         | All windows             |
+| `newWindow(WindowType)`                      | Open tab/window         |
+| `switchWindow(handle)`                       | Switch window           |
+| `closeWindow()`                              | Close window            |
+| `maximize()` / `minimize()` / `fullscreen()` | Window state            |
+| `getWindowRect()` / `setWindowRect()`        | Geometry                |
+| `switchFrame(index)`                         | Switch frame            |
+| `switchFrame(element)`                       | Switch frame by element |
+| `switchToParentFrame()`                      | Parent frame            |
 
 ---
 
 ### Element Interaction
-| Method  | URI Template                                                   | Command                    | Status  |
-|---------|----------------------------------------------------------------|----------------------------|---------|
-| POST    | /session/{session id}/element                                  | Find Element               | ✅      |
-| POST    | /session/{session id}/elements                                 | Find Elements              | ✅      |
-| POST    | /session/{session id}/element/{element id}/element             | Find Element From Element  | ✅      |
-| POST    | /session/{session id}/element/{element id}/elements            | Find Elements From Element | ✅      |
-| GET     | /session/{session id}/element/active                           | Get Active Element         | ✅      |
-| GET     | /session/{session id}/element/{element id}/selected            | Is Element Selected        | ✅      |
-| GET     | /session/{session id}/element/{element id}/attribute/{name}    | Get Element Attribute      | ✅      |
-| GET     | /session/{session id}/element/{element id}/property/{name}     | Get Element Property       | ✅      |
-| GET     | /session/{session id}/element/{element id}/css/{property name} | Get Element CSS Value      | ✅      |
-| GET     | /session/{session id}/element/{element id}/text                | Get Element Text           | ✅      |
-| GET     | /session/{session id}/element/{element id}/name                | Get Element Tag Name       | ✅      |
-| GET     | /session/{session id}/element/{element id}/rect                | Get Element Rect           | ✅      |
-| GET     | /session/{session id}/element/{element id}/enabled             | Is Element Enabled         | ✅      |
-| POST    | /session/{session id}/element/{element id}/click               | Element Click              | ✅      |
-| POST    | /session/{session id}/element/{element id}/clear               | Element Clear              | ✅      |
-| POST    | /session/{session id}/element/{element id}/value               | Element Send Keys          | ✅      |
+
+| Function                        | Description            |
+| ------------------------------- | ---------------------- |
+| `findElement(strategy, value)`  | Find single element    |
+| `findElements(strategy, value)` | Find multiple elements |
+| `Element::click()`              | Click                  |
+| `Element::sendKeys()`           | Send keys              |
+| `Element::clear()`              | Clear                  |
+| `Element::submit()`             | Submit                 |
+| `Element::text()`               | Get text               |
+| `Element::attribute(name)`      | Attribute              |
+| `Element::css(property)`        | CSS value              |
+| `Element::rect()`               | Element bounds         |
 
 ---
 
-### Page Information
-| Method  | URI Template                      | Command                | Status  |
-|---------|-----------------------------------|------------------------|---------|
-| GET     | /session/{session id}/source      | Get Page Source        | ✅      |
-| GET     | /session/{session id}/title       | Get Title              | ✅      |
+### Timeouts
+
+```cpp
+driver.setTimeouts({ .implicit = 5000, .pageLoad = 10000 });
+```
+
+| Function        | Description    |
+| --------------- | -------------- |
+| `getTimeouts()` | Fetch timeouts |
+| `setTimeouts()` | Set timeouts   |
 
 ---
 
 ### Script Execution
-| Method  | URI Template                        | Command                | Status  |
-|---------|-------------------------------------|------------------------|---------|
-| POST    | /session/{session id}/execute/sync  | Execute Script         | ✅      |
-| POST    | /session/{session id}/execute/async | Execute Async Script   |         |
+
+```cpp
+int result = driver.execute<int>("return 2 + 2;");
+```
+
+| Function                   | Description         |
+| -------------------------- | ------------------- |
+| `execute<T>(script, args)` | Execute sync script |
 
 ---
 
-### Cookie Management
-| Method  | URI Template                        | Command                | Status  |
-|---------|-------------------------------------|------------------------|---------|
-| GET     | /session/{session id}/cookie        | Get All Cookies        | ✅      |
-| GET     | /session/{session id}/cookie/{name} | Get Named Cookie       | ✅      |
-| POST    | /session/{session id}/cookie        | Add Cookie             | ✅      |
-| DELETE  | /session/{session id}/cookie/{name} | Delete Cookie          | ✅      |
-| DELETE  | /session/{session id}/cookie        | Delete All Cookies     | ✅      |
+### Cookies
+
+| Function             | Description   |
+| -------------------- | ------------- |
+| `getAllCookies()`    | Fetch cookies |
+| `getCookie(name)`    | Get cookie    |
+| `addCookie(cookie)`  | Add cookie    |
+| `deleteCookie(name)` | Delete cookie |
+| `deleteAllCookies()` | Clear cookies |
 
 ---
 
-### Actions
-| Method  | URI Template                      | Command                | Status  |
-|---------|-----------------------------------|------------------------|---------|
-| POST    | /session/{session id}/actions     | Perform Actions        |         |
-| DELETE  | /session/{session id}/actions     | Release Actions        |         |
+### Alerts
+
+| Function                 | Description   |
+| ------------------------ | ------------- |
+| `dismissAlert(true)`     | Accept alert  |
+| `dismissAlert(false)`    | Dismiss alert |
+| `getAlertText()`         | Alert text    |
+| `setAlertResponse(text)` | Send text     |
 
 ---
 
-### Alert Handling
-| Method  | URI Template                        | Command                | Status  |
-|---------|-------------------------------------|------------------------|---------|
-| POST    | /session/{session id}/alert/dismiss | Dismiss Alert          | ✅      |
-| POST    | /session/{session id}/alert/accept  | Accept Alert           | ✅      |
-| GET     | /session/{session id}/alert/text    | Get Alert Text         | ✅      |
-| POST    | /session/{session id}/alert/text    | Send Alert Text        | ✅      |
+### Screenshots & Printing
+
+| Function                | Description       |
+| ----------------------- | ----------------- |
+| `save_screenshot(file)` | Screenshot        |
+| `print(file, options)`  | Print page to PDF |
 
 ---
 
-### Screenshots
-| Method  | URI Template                                          | Command                 | Status  |
-|---------|-------------------------------------------------------|-------------------------|---------|
-| GET     | /session/{session id}/screenshot                      | Take Screenshot         | ✅      |
-| GET     | /session/{session id}/element/{element id}/screenshot | Take Element Screenshot | ✅      |
+## WebDriver Protocol Coverage
+
+This library implements the **W3C WebDriver specification**.
+
+| Area             | Status |
+| ---------------- | ------ |
+| Sessions         | ✅      |
+| Navigation       | ✅      |
+| Windows & Frames | ✅      |
+| Elements         | ✅      |
+| Cookies          | ✅      |
+| Alerts           | ✅      |
+| Screenshots      | ✅      |
+| Printing         | ✅      |
+| Execute Async    | ⏳      |
+| Actions API      | ⏳      |
 
 ---
 
-### Printing
-| Method  | URI Template                      | Command                | Status  |
-|---------|-----------------------------------|------------------------|---------|
-| POST    | /session/{session id}/print       | Print Page             | ✅      |
+## Testing
+
+Tests are browser backed and run against real WebDriver instances.
+
+```sh
+FIREFOX_PORT=1001 CHROME_PORT=1002 MSEDGE_PORT=1003 \
+ctest --output-on-failure
+```
+
+Run a single browser:
+
+```sh
+CHROME_PORT=1002 ctest -L chrome
+```
 
 ---
 
-## Contributing
-Contributions are welcome! Feel free to open an issue or submit a pull request.
+## Roadmap
+
+* [ ] Actions API
+* [ ] Execute Async
+
+---
 
 ## License
+
 This project is licensed under the MIT License.

@@ -1,14 +1,15 @@
-#include "webdriverxx.hpp"
-
-namespace fs = std::filesystem;
-using namespace webdriverxx;
-
-// Specify Browser type, Location and driver port
-auto browserType = BROWSERS::CHROME;
-auto browserPath = "C:/Program Files/Google/Chrome/Application/chrome.exe";
-auto driverPort = "1000";
+#include "webdriver.hpp"
 
 int main() {
+    namespace fs = std::filesystem;
+    using namespace webdriverxx;
+    using namespace webdriverxx::enums;
+
+    // Specify Browser type, Location and driver port
+    auto browserType = Chrome;
+    auto browserPath = "C:/Program Files/Google/Chrome/Application/chrome.exe";
+    auto driverPort = "1000";
+
     // Remove screens if already exists, create new
     if (fs::exists("screens")) fs::remove_all("screens");
     fs::create_directory("screens");
@@ -38,7 +39,7 @@ int main() {
         screenLink.click();
 
         // Print the page result
-        auto pageopts = PageOptions().orientation(LANDSCAPE).shrinkToFit(false).pageScale(0.75);
+        auto pageopts = PageOptions().orientation(Landscape).shrinkToFit(false).pageScale(0.75);
         driver.print("screens/" + screenName + ".pdf", pageopts);
         
         // Navigate back

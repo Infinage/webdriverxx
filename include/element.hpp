@@ -6,9 +6,9 @@
 #include <fstream>
 #include <stdexcept>
 
-using json = nlohmann::json;
-
 namespace webdriverxx {
+    using Json = nlohmann::json;
+
     class Element {
         private:
             const std::string elementRef, elementId, sessionURL, elementURL;
@@ -19,8 +19,8 @@ namespace webdriverxx {
                 return !elementId.empty(); 
             }
 
-            operator json() const {
-                return json{{elementRef, elementId}};
+            operator Json() const {
+                return Json{{elementRef, elementId}};
             }
 
             Element(const std::string &elementRef, const std::string &elementId, const std::string &sessionURL): 
@@ -31,22 +31,22 @@ namespace webdriverxx {
             { }
 
             Element &clickJS() {
-                json payload = {
+                Json payload = {
                     { "script", "arguments[0].click();" }, 
-                    { "args", json::array({{{elementRef, elementId}}}) }
+                    { "args", Json::array({{{elementRef, elementId}}}) }
                 };
-                sendRequest(POST, sessionURL + "/execute/sync", payload.dump());
+                sendRequest(ApiMethod::Post, sessionURL + "/execute/sync", payload.dump());
                 return *this;
             }
 
             Element &click() {
-                sendRequest(POST, elementURL + "/click");
+                sendRequest(ApiMethod::Post, elementURL + "/click");
                 return *this;
             }
 
             Element &sendKeys(const std::string &text) {
-                json payload {{ "text", text }};
-                sendRequest(POST, elementURL + "/value", payload.dump());
+                Json payload {{ "text", text }};
+                sendRequest(ApiMethod::Post, elementURL + "/value", payload.dump());
                 return *this;
             }
 
@@ -56,57 +56,57 @@ namespace webdriverxx {
             }
 
             Element &clear() {
-                sendRequest(POST, elementURL + "/clear");
+                sendRequest(ApiMethod::Post, elementURL + "/clear");
                 return *this;
             }
 
             Element &scrollIntoView(unsigned short pauseMS = 0) {
-                json payload = {
+                Json payload = {
                     { "script", "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});" }, 
-                    { "args", json::array({{{elementRef, elementId}}}) }
+                    { "args", Json::array({{{elementRef, elementId}}}) }
                 };
-                sendRequest(POST, sessionURL + "/execute/sync", payload.dump());
+                sendRequest(ApiMethod::Post, sessionURL + "/execute/sync", payload.dump());
                 std::this_thread::sleep_for(std::chrono::milliseconds(pauseMS));
                 return *this;
             }
 
             std::string getElementAttribute(const std::string &name) const {
-                json response = sendRequest(GET, elementURL + "/attribute/" + name);
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/attribute/" + name);
                 return response["value"];
             }
 
             std::string getElementProperty(const std::string &name) const {
-                json response = sendRequest(GET, elementURL + "/property/" + name);
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/property/" + name);
                 return response["value"];
             }
 
             std::string getElementCSSValue(const std::string &name) const {
-                json response = sendRequest(GET, elementURL + "/css/" + name);
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/css/" + name);
                 return response["value"];
             }
 
             std::string getElementText() const {
-                json response = sendRequest(GET, elementURL + "/text");
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/text");
                 return response["value"];
             }
 
             std::string getElementTagName() const {
-                json response = sendRequest(GET, elementURL + "/name");
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/name");
                 return response["value"];
             }
 
             bool isEnabled() const {
-                json response = sendRequest(GET, elementURL + "/enabled");
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/enabled");
                 return response["value"];
             }
 
             bool isSelected() const {
-                json response = sendRequest(GET, elementURL + "/selected");
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/selected");
                 return response["value"];
             }
 
             Element &save_screenshot(const std::string &ofile) {
-                json response = sendRequest(GET, elementURL + "/screenshot");
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/screenshot");
                 std::ofstream imageFS {ofile, std::ios::binary};
                 if (!imageFS) throw std::runtime_error("Failed to open file for writing: " + ofile);
                 std::string decoded {Base64::base64Decode(response["value"])};
@@ -115,7 +115,7 @@ namespace webdriverxx {
             }
 
             Element getActiveElement() const {
-                json response = sendRequest(GET, elementURL + "/element/active");
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/element/active");
                 return Element(
                     response["value"].begin().key(), 
                     response["value"].begin().value(), 
@@ -123,15 +123,15 @@ namespace webdriverxx {
                 );
             }
 
-            Element findElement(const LOCATION_STRATEGY &strategy, const std::string &criteria) const {
+            Element findElement(const LocationStrategy &strategy, const std::string &criteria) const {
                 std::string strategyKeyword;
                 switch (strategy) {
-                    case CSS: strategyKeyword = "css selector"; break;
-                    case TAGNAME: strategyKeyword = "tag name"; break;
-                    case XPATH: strategyKeyword = "xpath"; break;
+                    case LocationStrategy::CSS: strategyKeyword = "css selector"; break;
+                    case LocationStrategy::TagName: strategyKeyword = "tag name"; break;
+                    case LocationStrategy::Xpath: strategyKeyword = "xpath"; break;
                 }
-                json payload {{"using", strategyKeyword}, {"value", criteria}};
-                json response = sendRequest(POST, elementURL + "/element", payload.dump());
+                Json payload {{"using", strategyKeyword}, {"value", criteria}};
+                Json response = sendRequest(ApiMethod::Post, elementURL + "/element", payload.dump());
                 return Element(
                     response["value"].begin().key(), 
                     response["value"].begin().value(), 
@@ -139,18 +139,18 @@ namespace webdriverxx {
                 );
             }
 
-            std::vector<Element> findElements(const LOCATION_STRATEGY &strategy, const std::string &criteria) const {
+            std::vector<Element> findElements(const LocationStrategy &strategy, const std::string &criteria) const {
                 std::string strategyKeyword;
                 switch (strategy) {
-                    case CSS: strategyKeyword = "css selector"; break;
-                    case TAGNAME: strategyKeyword = "tag name"; break;
-                    case XPATH: strategyKeyword = "xpath"; break;
+                    case LocationStrategy::CSS: strategyKeyword = "css selector"; break;
+                    case LocationStrategy::TagName: strategyKeyword = "tag name"; break;
+                    case LocationStrategy::Xpath: strategyKeyword = "xpath"; break;
                 }
-                json payload {{"using", strategyKeyword}, {"value", criteria}};
-                json response = sendRequest(POST, elementURL + "/elements", payload.dump());
+                Json payload {{"using", strategyKeyword}, {"value", criteria}};
+                Json response = sendRequest(ApiMethod::Post, elementURL + "/elements", payload.dump());
                 std::vector<Element> elements;
                 std::transform(response["value"].begin(), response["value"].end(), std::back_inserter(elements), 
-                    [&](const json::value_type &ele) {
+                    [&](const Json::value_type &ele) {
                         return Element{ele.begin().key(), ele.begin().value(), sessionURL};
                     }
                 );
@@ -158,7 +158,7 @@ namespace webdriverxx {
             }
 
             Rect getElementRect() const {
-                json response = sendRequest(GET, elementURL + "/rect");
+                Json response = sendRequest(ApiMethod::Get, elementURL + "/rect");
                 return Rect{response["value"]};
             }
     };

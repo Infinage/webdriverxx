@@ -1,16 +1,16 @@
 #pragma once
 
-#include "json.hpp"
-
-using json = nlohmann::json;
+#include "nlohmann/json.hpp"
 
 namespace webdriverxx {
+    using Json = nlohmann::json;
 
-    enum ORIENTATION {POTRAIT, LANDSCAPE};
+    enum class Orientation {Potrait, Landscape};
+    namespace enums { using enum Orientation; }
 
     class PageOptions {
         private:
-            std::optional<ORIENTATION> orientation_;
+            std::optional<Orientation> orientation_;
             std::optional<bool> background_, shrinkToFit_;
             std::optional<float> pageHeight_, pageWidth_, pageScale_;
             std::optional<float> marginTop_, marginBottom_, marginLeft_, marginRight_;
@@ -29,7 +29,7 @@ namespace webdriverxx {
             PageOptions  &marginRight(const float value) {  marginRight_ = value; return *this; }
             PageOptions &marginBottom(const float value) { marginBottom_ = value; return *this; }
 
-            PageOptions &orientation(const ORIENTATION &value) { 
+            PageOptions &orientation(const Orientation &value) { 
                 orientation_ = value; return *this; 
             }
 
@@ -37,8 +37,8 @@ namespace webdriverxx {
                 pageRanges_ = value; return *this; 
             }
 
-            operator json() const {
-                json object;
+            operator Json() const {
+                Json object;
 
                 if (  background_) object[ "background"] = *background_;
                 if ( shrinkToFit_) object["shrinkToFit"] = *shrinkToFit_;
@@ -53,12 +53,12 @@ namespace webdriverxx {
                 if (marginBottom_) object["margin"]["bottom"] = *marginBottom_;
 
                 if (orientation_) object["orientation"] = (
-                        *orientation_ == ORIENTATION::LANDSCAPE? 
+                        *orientation_ == Orientation::Landscape? 
                         "landscape": "portrait"
                 );
 
                 if (pageRanges_) {
-                    json ranges = json::array();
+                    Json ranges = Json::array();
                     for (const std::string &str: *pageRanges_)
                         ranges.push_back(str);
                     object["pageRanges"] = ranges;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "httplib.h"
-#include "json.hpp"
+#include "nlohmann/json.hpp"
 
 #include "apierror.hpp"
 
@@ -11,8 +11,10 @@
 #include <thread>
 
 namespace webdriverxx {
-    enum LOCATION_STRATEGY {CSS, TAGNAME, XPATH};
-    enum API_METHOD {GET, POST, DELETE};
+    enum class LocationStrategy {CSS, TagName, Xpath};
+    enum class ApiMethod {Get, Post, Delete};
+
+    namespace enums { using enum LocationStrategy; using enum ApiMethod; }
 
     enum class Keys: char16_t {
         Cancel = u'\uE001', Help = u'\uE002', Backspace = u'\uE003', Tab = u'\uE004',
@@ -68,7 +70,7 @@ namespace webdriverxx {
     }
 
     inline nlohmann::json sendRequest(
-        const API_METHOD &requestType, 
+        const ApiMethod &requestType, 
         const std::string &url,
         const std::string &body = "{}", 
         const long OK = 200, bool ignoreError = false
@@ -87,13 +89,13 @@ namespace webdriverxx {
         httplib::Result res;
 
         switch (requestType) {
-            case API_METHOD::GET:
+            case ApiMethod::Get:
                 res = cli.Get(path.c_str(), httplib::Headers{{"Accept", "application/json"}});
                 break;
-            case API_METHOD::POST:
+            case ApiMethod::Post:
                 res = cli.Post(path.c_str(), body, "application/json");
                 break;
-            case API_METHOD::DELETE:
+            case ApiMethod::Delete:
                 res = cli.Delete(path.c_str(), httplib::Headers{{"Accept", "application/json"}});
                 break;
         }
@@ -104,7 +106,8 @@ namespace webdriverxx {
         }
 
         if (res->status != OK && !ignoreError) {
-            std::string methodStr {requestType == GET ? "GET" : requestType == POST ? "POST" : "DELETE"};
+            std::string methodStr {requestType == ApiMethod::Get? "GET": 
+                requestType == ApiMethod::Post? "POST": "DELETE"};
             throw APIError{url, body, methodStr, res->status, res->body};
         }
 

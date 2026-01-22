@@ -1,18 +1,18 @@
 #pragma once
 
-#include "json.hpp"
+#include "nlohmann/json.hpp"
 
 #include <iostream>
 
-using json = nlohmann::json;
-
 namespace webdriverxx {
+    using Json = nlohmann::json;
 
-    enum class BROWSERS {MSEDGE, CHROME, FIREFOX};
+    enum class Browsers {MSEdge, Chrome, Firefox};
+    namespace enums { using enum Browsers; }
 
     class Capabilities {
         private:
-            const BROWSERS browserType;
+            const Browsers browserType;
             const std::string binaryPath;
 
             std::optional<bool> _headless;
@@ -30,7 +30,7 @@ namespace webdriverxx {
             std::optional<std::string> _proxy;
 
         public:
-            Capabilities(const BROWSERS &browserType, const std::string &binaryPath): 
+            Capabilities(const Browsers &browserType, const std::string &binaryPath): 
                 browserType(browserType), binaryPath(binaryPath) {}
 
             // Builder pattern for setting capabilities
@@ -45,10 +45,10 @@ namespace webdriverxx {
             Capabilities &proxy(const std::string &proxyURL) { _proxy = proxyURL; return *this; }
             Capabilities &windowSize(int height, int width) { _windowHeight = height; _windowWidth = width; return *this; }
 
-            operator json() const {
+            operator Json() const {
 
                 // Warn unsupported opts
-                if (browserType == BROWSERS::FIREFOX) {
+                if (browserType == Browsers::Firefox) {
                     if (_startMaximized && *_startMaximized)
                         std::cerr << "Start maximized is not supported in firefox. Please maximize by calling `driver.maximize` instead.\n";
                 }
@@ -56,14 +56,14 @@ namespace webdriverxx {
                 // Base capabilities
                 std::string optsId;
                 switch (browserType) {
-                    case BROWSERS::FIREFOX: optsId = "moz:firefoxOptions"; break;
-                    case BROWSERS::CHROME: optsId = "goog:chromeOptions"; break;
-                    case BROWSERS::MSEDGE: optsId = "ms:edgeOptions"; break;
+                    case Browsers::Firefox: optsId = "moz:firefoxOptions"; break;
+                    case Browsers::Chrome: optsId = "goog:chromeOptions"; break;
+                    case Browsers::MSEdge: optsId = "ms:edgeOptions"; break;
                 }
 
-                json alwaysMatch = { 
+                Json alwaysMatch = { 
                     { optsId, {  
-                        { "args", json::array() },
+                        { "args", Json::array() },
                         { "binary", binaryPath }
                     }}
                 };
@@ -75,7 +75,7 @@ namespace webdriverxx {
                     alwaysMatch[optsId]["args"].push_back("--disable-gpu");
                 if (_startMaximized && *_startMaximized) 
                     alwaysMatch[optsId]["args"].push_back("--start-maximized");
-                if (_disablePopupBlocking && *_disablePopupBlocking && browserType != BROWSERS::FIREFOX) 
+                if (_disablePopupBlocking && *_disablePopupBlocking && browserType != Browsers::Firefox) 
                     alwaysMatch[optsId]["args"].push_back("--disable-popup-blocking");
 
                 // Handle Ignore Certificate Errors
@@ -83,7 +83,7 @@ namespace webdriverxx {
                     alwaysMatch["acceptInsecureCerts"] = true;
 
                 // Firefox specific opts
-                if (browserType == BROWSERS::FIREFOX) {
+                if (browserType == Browsers::Firefox) {
                     if (_windowHeight && _windowWidth) {
                         alwaysMatch[optsId]["args"].push_back("--height=" + std::to_string(*_windowHeight)); 
                         alwaysMatch[optsId]["args"].push_back("--width=" + std::to_string(*_windowWidth));
@@ -120,7 +120,7 @@ namespace webdriverxx {
                 }
 
                 // Final payload
-                json payload = {{"capabilities", {{"alwaysMatch", alwaysMatch}}}};
+                Json payload = {{"capabilities", {{"alwaysMatch", alwaysMatch}}}};
                 return payload;
             }
     };

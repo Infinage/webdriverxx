@@ -1,15 +1,15 @@
-#include "webdriverxx.hpp"
-
+#include "webdriver.hpp"
 #include <iostream>
 
-using namespace webdriverxx;
-
-// Specify Browser type, Location and driver port
-auto browserType = BROWSERS::FIREFOX;
-auto browserPath = "/usr/bin/zen";
-auto driverPort = "4444";
-
 int main() {
+    using namespace webdriverxx;
+    using namespace webdriverxx::enums;
+
+    // Specify Browser type, Location and driver port
+    auto browserType = Firefox;
+    auto browserPath = "/usr/bin/zen";
+    auto driverPort = "4444";
+
     // Create a new webdriver
     auto caps = Capabilities(browserType, browserPath).startMaximized(true).headless(false);
     Driver driver{caps, driverPort};
@@ -18,7 +18,7 @@ int main() {
     driver.navigateTo("https://www.github.com");
 
     // Click on 'Open Source'
-    driver.findElement(XPATH, "//button[contains(text(), 'Open Source')]").click();
+    driver.findElement(Xpath, "//button[contains(text(), 'Open Source')]").click();
 
     // Click on 'Trending'
     driver.findElement(CSS, "li a[href*='trending']").click();
@@ -65,7 +65,7 @@ int main() {
         // Scrape useful info - Stars, Forks, Commits, Issues, PRs
         auto stars = driver.findElement(CSS, "#repo-stars-counter-star").getElementText();
         auto forks = driver.findElement(CSS, "#repo-network-counter").getElementText();
-        auto commits = driver.findElement(XPATH, "//span[contains(text(), 'Commits')]").getElementText();
+        auto commits = driver.findElement(Xpath, "//span[contains(text(), 'Commits')]").getElementText();
         auto issues = driver.findElement(CSS, "#issues-tab #issues-repo-tab-count").getElementText();
         auto prs = driver.findElement(CSS, "#pull-requests-tab #pull-requests-repo-tab-count").getElementText();
 

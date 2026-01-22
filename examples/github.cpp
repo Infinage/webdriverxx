@@ -7,7 +7,7 @@ int main() {
 
     // Specify Browser type, Location and driver port
     auto browserType = Firefox;
-    auto browserPath = "/usr/bin/zen";
+    auto browserPath = "/usr/bin/firefox";
     auto driverPort = "4444";
 
     // Create a new webdriver

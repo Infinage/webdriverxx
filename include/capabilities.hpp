@@ -29,6 +29,8 @@ namespace webdriverxx {
             std::optional<std::string> _downloadDir;
             std::optional<std::string> _proxy;
 
+            std::vector<Json> _extraCaps;
+
         public:
             Capabilities(const Browsers &browserType, const std::string &binaryPath): 
                 browserType(browserType), binaryPath(binaryPath) {}
@@ -44,6 +46,9 @@ namespace webdriverxx {
             Capabilities &downloadDir(const std::string &directory) { _downloadDir = directory; return *this; }
             Capabilities &proxy(const std::string &proxyURL) { _proxy = proxyURL; return *this; }
             Capabilities &windowSize(int height, int width) { _windowHeight = height; _windowWidth = width; return *this; }
+
+            // Add any extra flags to be set for browser such as 'moz:firefoxOptions'
+            Capabilities &extraCapability(Json value) { _extraCaps.emplace_back(std::move(value)); return *this; }
 
             operator Json() const {
 
@@ -118,6 +123,9 @@ namespace webdriverxx {
                         };
                     }
                 }
+
+                // Add any extra flags add by user
+                for (const auto &cap: _extraCaps) alwaysMatch.update(cap, true);
 
                 // Final payload
                 Json payload = {{"capabilities", {{"alwaysMatch", alwaysMatch}}}};

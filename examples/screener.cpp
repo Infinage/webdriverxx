@@ -1,22 +1,18 @@
-#include "webdriver.hpp"
+#include "webdriverxx/webdriver.hpp"
 
 int main() {
     namespace fs = std::filesystem;
     using namespace webdriverxx;
     using namespace webdriverxx::enums;
 
-    // Specify Browser type, Location and driver port
-    auto browserType = Chrome;
-    auto browserPath = "C:/Program Files/Google/Chrome/Application/chrome.exe";
-    auto driverPort = "1000";
-
     // Remove screens if already exists, create new
     if (fs::exists("screens")) fs::remove_all("screens");
     fs::create_directory("screens");
 
     // Create a new webdriver
-    auto caps = Capabilities(browserType, browserPath).startMaximized(true);
-    Driver driver{caps, driverPort};
+    // Ensure ENV: "BROWSER_TYPE", "BROWSER_PATH" and "DRIVER_PORT"
+    auto caps = Capabilities{}.startMaximized(true).headless(false);
+    Driver driver{caps};
 
     // Navigate to URL
     driver.navigateTo("https://www.screener.in");

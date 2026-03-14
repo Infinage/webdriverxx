@@ -18,11 +18,38 @@ It provides a clean, RAII-driven API for browser automation with minimal depende
 
 ## Installation
 
-Using CPM:
+### Using FetchContent:
 
 ```cmake
-include(cmake/CPM.cmake)
-CPMAddPackage("gh:infinage/webdriverxx@0.0.1")
+include(FetchContent) 
+
+FetchContent_Declare(
+    webdriverxx 
+    GIT_REPOSITORY https://github.com/infinage/webdriverxx
+    GIT_TAG v0.0.1
+)
+
+FetchContent_MakeAvailable(webdriverxx) 
+
+target_link_libraries(your_target PRIVATE webdriverxx::webdriverxx)
+```
+
+### Using find_package
+
+If the library is installed on your system:
+
+```cmake
+find_package(webdriverxx REQUIRED)
+
+target_link_libraries(your_target PRIVATE webdriverxx::webdriverxx)
+```
+
+### Header-only usage
+
+Since WebDriver++ is header-only, you can also include it directly:
+
+```cpp
+#include <webdriverxx/webdriver.hpp>
 ```
 
 Or simply include the headers directly.
@@ -87,6 +114,27 @@ WebDriver++ is a **pure WebDriver client**, not a browser or driver manager.
 
 The library connects to an **existing WebDriver endpoint** via HTTP and does not attempt to manage external processes.
 
+### Environment Configuration
+
+WebDriver++ can automatically configure the driver using environment variables.
+
+| Variable | Description |
+|--------|-------------|
+| `BROWSER_TYPE` | Browser to use (`chrome`, `firefox`, `edge`) |
+| `BROWSER_PATH` | Path to browser executable |
+| `DRIVER_PORT` | Port of the running WebDriver instance |
+
+Example:
+
+```bash
+BROWSER_TYPE=firefox \
+BROWSER_PATH=/usr/bin/firefox \
+DRIVER_PORT=1234 \
+./your_program
+```
+
+If these variables are present, Webdriver++ will automatically use them when constructing the driver.
+
 ---
 
 ### Browser Capabilities
@@ -146,6 +194,7 @@ Browser-specific behavior is handled internally.
 | `findElement(strategy, value)`  | Find single element    |
 | `findElements(strategy, value)` | Find multiple elements |
 | `Element::click()`              | Click                  |
+| `Element::clickJS()`           | Click using JavaScript (works on hidden elements) |
 | `Element::sendKeys()`           | Send keys              |
 | `Element::clear()`              | Clear                  |
 | `Element::submit()`             | Submit                 |

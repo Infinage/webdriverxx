@@ -1,9 +1,9 @@
-#include "test_config.hpp"
+#include "webdriverxx/webdriver.hpp"
 
 int main() {
-    webdriverxx::Driver driver{webdriverxx::Capabilities{BROWSER_TYPE, BROWSER_BINARY}, PORT};
+    webdriverxx::Driver driver{webdriverxx::Capabilities{}};
     driver.navigateTo("https://duckduckgo.com");
-    webdriverxx::Element element {driver.findElement(webdriverxx::LOCATION_STRATEGY::CSS, "#searchbox_input")};
+    webdriverxx::Element element {driver.findElement(webdriverxx::LocationStrategy::CSS, "input[name='q']")};
     element.clear().sendKeys("Hello world").submit();
     int status {webdriverxx::waitUntil([&driver]{ return driver.getTitle() == "Hello world at DuckDuckGo"; }, 5000)};
     return !status;

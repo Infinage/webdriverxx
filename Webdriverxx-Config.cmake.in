@@ -1,0 +1,3 @@
+@PACKAGE_INIT@
+set_and_check(WEBDRIVERXX_CMAKE_DIR "@PACKAGE_WEBDRIVERXX_CMAKE_DIR@")
+include("${WEBDRIVERXX_CMAKE_DIR}/Webdriverxx-Targets.cmake")

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nlohmann/json.hpp"
+#include "utils.hpp"
 
 #include <iostream>
 
@@ -12,9 +13,6 @@ namespace webdriverxx {
 
     class Capabilities {
         private:
-            const Browsers browserType;
-            const std::string binaryPath;
-
             std::optional<bool> _headless;
             std::optional<bool> _disableGPU;
             std::optional<bool> _startMaximized;
@@ -31,9 +29,27 @@ namespace webdriverxx {
 
             std::vector<Json> _extraCaps;
 
+        private:
+            static Browsers getBrowserTypeFromEnv() {
+                std::string bType = getEnv("BROWSER_TYPE");
+                std::ranges::transform(bType, bType.begin(), [](char ch) { 
+                        return std::tolower(ch); });
+                if (bType == "firefox") return Browsers::Firefox;
+                else if (bType == "chrome") return Browsers::Chrome;
+                else if (bType == "edge" || bType == "msedge") return Browsers::MSEdge;
+                throw std::runtime_error{"Unsupported browser type: '" + 
+                    std::string{bType} + "'"};
+            }
+
         public:
+            const Browsers browserType;
+            const std::string binaryPath;
+
             Capabilities(const Browsers &browserType, const std::string &binaryPath): 
                 browserType(browserType), binaryPath(binaryPath) {}
+
+            Capabilities(): browserType{getBrowserTypeFromEnv()}, 
+                binaryPath{getEnv("BROWSER_PATH")} {} 
 
             // Builder pattern for setting capabilities
             Capabilities &headless(bool flag) { _headless = flag; return *this; }
@@ -55,7 +71,7 @@ namespace webdriverxx {
                 // Warn unsupported opts
                 if (browserType == Browsers::Firefox) {
                     if (_startMaximized && *_startMaximized)
-                        std::cerr << "Start maximized is not supported in firefox. Please maximize by calling `driver.maximize` instead.\n";
+                        std::cerr << "Start maximized is not supported in firefox. Please use `driver.maximize()` instead.\n";
                 }
 
                 // Base capabilities

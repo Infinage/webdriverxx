@@ -113,4 +113,11 @@ namespace webdriverxx {
 
         return nlohmann::json::parse(res->body);
     }
+
+    inline std::string getEnv(const std::string &var) {
+        auto *env = std::getenv(var.data());
+        if (!env) throw std::runtime_error{"ENV variable '" + var + "' not set"};
+        return env;
+    }
+
 }

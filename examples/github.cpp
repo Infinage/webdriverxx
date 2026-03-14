@@ -1,24 +1,23 @@
-#include "webdriver.hpp"
+#include "webdriverxx/webdriver.hpp"
 #include <iostream>
 
 int main() {
     using namespace webdriverxx;
     using namespace webdriverxx::enums;
 
-    // Specify Browser type, Location and driver port
-    auto browserType = Firefox;
-    auto browserPath = "/usr/bin/firefox";
-    auto driverPort = "4444";
-
     // Create a new webdriver
-    auto caps = Capabilities(browserType, browserPath).startMaximized(true).headless(false);
-    Driver driver{caps, driverPort};
+    // Ensure ENV: "BROWSER_TYPE", "BROWSER_PATH" and "DRIVER_PORT"
+    auto caps = Capabilities{}.startMaximized(true).headless(false);
+    Driver driver{caps};
+
+    // Firefox doesn't support maximizing screen with firefox
+    if (caps.browserType == Firefox) driver.maximize();
 
     // Navigate to URL
     driver.navigateTo("https://www.github.com");
 
     // Click on 'Open Source'
-    driver.findElement(Xpath, "//button[contains(text(), 'Open Source')]").click();
+    driver.findElement(Xpath, "//button[contains(text(), 'Open Source')]").clickJS();
 
     // Click on 'Trending'
     driver.findElement(CSS, "li a[href*='trending']").click();

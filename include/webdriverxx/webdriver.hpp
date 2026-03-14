@@ -6,6 +6,7 @@
 #include "cookie.hpp"
 #include "timeout.hpp"
 #include "element.hpp"
+
 #include <stdexcept>
 
 namespace webdriverxx {
@@ -29,12 +30,14 @@ namespace webdriverxx {
             }
 
         public:
+            // If port is not set, it is picked from env: 'DRIVER_PORT'
             Driver(
                 const Capabilities &cap_,
-                const std::string  &port_,
+                const std::string  &port_ = "",
                 const std::string  &sessionId_  = ""
             ):
-                capabilities(cap_), port(port_),
+                capabilities(cap_), 
+                port(!port_.empty()? port_: getEnv("DRIVER_PORT")),
                 baseURL("http://127.0.0.1:" + port), 
                 sessionId(sessionId_.empty()? startSession(): sessionId_), 
                 sessionURL(baseURL + "/session/" + sessionId) 
@@ -45,7 +48,7 @@ namespace webdriverxx {
             bool status() {
                 // Ignore errors and parse the errors as JSON
                 Json response = sendRequest(ApiMethod::Get, baseURL + "/status", "{}", 200, true);
-                if (response.value("status_code", 200) != 200) return false;
+                if (response.empty() || response.value("status_code", 200) != 200) return false;
                 else return response["value"]["ready"];
             }
 

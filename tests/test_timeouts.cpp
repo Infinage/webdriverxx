@@ -1,7 +1,7 @@
-#include "test_config.hpp"
+#include "webdriverxx/webdriver.hpp"
 
 int main() {
-    webdriverxx::Driver driver{webdriverxx::Capabilities{BROWSER_TYPE, BROWSER_BINARY}, PORT};
+    webdriverxx::Driver driver{webdriverxx::Capabilities{}};
     driver.setTimeouts({.script=0, .pageLoad=0, .implicit=0});
     const auto &timeouts {driver.getTimeouts()};
     int status {timeouts.script == 0 && timeouts.pageLoad == 0 && timeouts.implicit == 0};

@@ -1,12 +1,12 @@
-#include "test_config.hpp"
+#include "webdriverxx/webdriver.hpp"
 #include <iostream>
 
 int main() {
     // Set the capabilities
-    webdriverxx::Capabilities caps(BROWSER_TYPE, BROWSER_BINARY);
+    webdriverxx::Capabilities caps{};
     caps.userAgent("Webdriverxx").headless(true);
 
-    webdriverxx::Driver driver{caps, PORT};
+    webdriverxx::Driver driver{caps};
     int status {true};
 
     // Check useragent

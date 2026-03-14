@@ -1,6 +1,11 @@
-#include "test_config.hpp"
+#include "webdriverxx/webdriver.hpp"
 
 int main() {
-    webdriverxx::Driver driver{webdriverxx::Capabilities{BROWSER_TYPE, BROWSER_BINARY}, PORT};
-    driver.findElement(webdriverxx::LOCATION_STRATEGY::CSS, "#404");
+    webdriverxx::Driver driver{webdriverxx::Capabilities{}};
+    try {
+        driver.findElement(webdriverxx::LocationStrategy::CSS, "#404");
+    } catch (webdriverxx::APIError &ex) {
+        return 0;
+    }
+    return 1;
 }
